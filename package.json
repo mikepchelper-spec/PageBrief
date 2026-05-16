@@ -1,0 +1,17 @@
+{
+  "name": "pagebrief",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Chrome extension that synthesizes research across multiple tabs",
+  "license": "MIT",
+  "scripts": {
+    "build": "pnpm --filter pagebrief-extension build",
+    "dev": "pnpm --filter pagebrief-extension dev",
+    "lint": "pnpm --filter pagebrief-extension lint",
+    "typecheck": "pnpm --filter pagebrief-extension typecheck"
+  },
+  "packageManager": "pnpm@9.15.1",
+  "engines": {
+    "node": ">=20"
+  }
+}
