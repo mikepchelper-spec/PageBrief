@@ -1,7 +1,7 @@
 import { Readability } from '@mozilla/readability';
 import type { ExtractedPage } from '@/lib/types';
 
-(function extract(): ExtractedPage {
+function extractPage(): ExtractedPage {
   const docClone = document.cloneNode(true) as Document;
   const reader = new Readability(docClone, {
     debug: false,
@@ -22,4 +22,24 @@ import type { ExtractedPage } from '@/lib/types';
   const excerpt = article?.excerpt ?? content.slice(0, 240);
 
   return { title, url, domain, content, excerpt };
-})();
+}
+
+interface IncomingMessage {
+  type?: string;
+}
+
+chrome.runtime.onMessage.addListener((message: IncomingMessage, _sender, sendResponse) => {
+  if (message && message.type === 'EXTRACT_PAGE') {
+    try {
+      const page = extractPage();
+      sendResponse({ ok: true, page });
+    } catch (err) {
+      sendResponse({
+        ok: false,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+    return false;
+  }
+  return false;
+});
