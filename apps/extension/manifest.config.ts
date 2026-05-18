@@ -28,7 +28,15 @@ export default defineManifest({
     service_worker: 'src/background/service-worker.ts',
     type: 'module',
   },
-  permissions: ['activeTab', 'storage', 'sidePanel', 'scripting'],
+  content_scripts: [
+    {
+      matches: ['<all_urls>'],
+      js: ['src/content/extractor.ts'],
+      run_at: 'document_idle',
+      all_frames: false,
+    },
+  ],
+  permissions: ['activeTab', 'storage', 'sidePanel'],
   host_permissions: ['<all_urls>'],
   content_security_policy: {
     extension_pages: "script-src 'self'; object-src 'self'",
