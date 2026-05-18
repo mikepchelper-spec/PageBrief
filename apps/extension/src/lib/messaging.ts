@@ -1,5 +1,11 @@
 import type { ExtractedPage } from './types';
 
+interface ExtractResponse {
+  ok: boolean;
+  page?: ExtractedPage;
+  error?: string;
+}
+
 export async function extractActivePage(): Promise<ExtractedPage> {
   const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!activeTab?.id) {
@@ -8,23 +14,34 @@ export async function extractActivePage(): Promise<ExtractedPage> {
   const tabId = activeTab.id;
   const url = activeTab.url ?? '';
 
-  if (url.startsWith('chrome://') || url.startsWith('chrome-extension://') || url === '') {
-    throw new Error('Cannot extract content from this page (chrome:// URLs are not accessible).');
+  if (
+    url.startsWith('chrome://') ||
+    url.startsWith('chrome-extension://') ||
+    url.startsWith('edge://') ||
+    url.startsWith('about:') ||
+    url === ''
+  ) {
+    throw new Error(
+      'Cannot extract content from this page (browser internal URLs are not accessible).',
+    );
   }
 
-  const results = await chrome.scripting.executeScript({
-    target: { tabId },
-    files: ['src/content/extractor.ts'],
-  });
-
-  const result = results[0]?.result as ExtractedPage | undefined;
-  if (!result) {
-    throw new Error('Page extraction returned no result.');
+  let response: ExtractResponse | undefined;
+  try {
+    response = (await chrome.tabs.sendMessage(tabId, { type: 'EXTRACT_PAGE' })) as
+      | ExtractResponse
+      | undefined;
+  } catch {
+    throw new Error('Page reader not ready on this tab. Reload the page and try again.');
   }
-  if (!result.content || result.content.length < 50) {
+
+  if (!response || !response.ok || !response.page) {
+    throw new Error(response?.error ?? 'Page extraction returned no result.');
+  }
+  if (response.page.content.length < 50) {
     throw new Error('Page content was too short to summarize.');
   }
-  return result;
+  return response.page;
 }
 
 export async function openOptions(): Promise<void> {
